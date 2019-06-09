@@ -80,74 +80,139 @@ def getSubTrain(label):
 	return subTrain, labelTrain
 
 
-def makeChain(item, itemLabel)
+def makeChain(item, itemLabel):
 	chain    = {}
 	stop     = False
-	minLabel = itemLabel
-	subTrain,labelTrain = getSubTrain(minLabel)
-	itemSearch = item
-	for label, data in subTrain.items():
-		minDist  = math.inf
-		minLabel = 0
-		minIdx   = -1
-		for idx in range(len(data)):
-			dist = distanceDTW(data[idx], itemSearch)		
-			if dist < minDist:
-				minDist  = dist
-				minLabel = label
-				minIdx   = idx
-
-	if minLabel in chain:
-		# visitados = chain[minLabel]			
-		aux = chain[minLabel]
-		aux.append(minIdx)
-		del chain[minLabel]
-		chain[minLabel] = aux
-	else:
-		aux = [minIdx]
-		chain[minLabel] = aux
-
-
+	primeraVez = True
 	oldLabel = -1
 	oldIdx   = -1
 
 	minLabel = itemLabel
-	while not stop:
+	itemSearch = item
+	while not stop:		
 		subTrain,labelTrain = getSubTrain(minLabel)
-		itemSearch = item
+		if primeraVez == True:
+			dataItemLabel =labelTrain
+			primeraVez = False
+
+		maxWeigth = 0	
 		for label, data in subTrain.items():
-			minDist  = math.inf
-			minLabel = 0
-			minIdx   = -1
+			if len(data) > maxWeigth:
+				maxWeigth = len(data)
+		matrixDistance      = np.zeros((len(subTrain), maxWeigth))
+
+		idxLabel = 0
+		minDist  = math.inf
+		# minLabel = 0
+		minIdx   = -1
+		minItem  = []
+		
+		for label, data in subTrain.items():		
 			for idx in range(len(data)):
-				dist = distanceDTW(data[idx], itemSearch)		
+				dist = matrixDistance[idxLabel, idx]
+				if dist == 0:					
+					dist = distanceDTW(data[idx], itemSearch)					
+					matrixDistance[idxLabel, idx] = dist
+
 				if dist < minDist:
 					minDist  = dist
 					minLabel = label
 					minIdx   = idx
+					minItem  = data[idx]
 
+			idxLabel += 1
+
+		end = time.time()
+		duration = end - start
+		print('durationFOR: ', duration)
+		itemSearch = minItem	
 		print('minLabel: ', minLabel)
+		print('minIdx: ', minIdx)
+		print('minDist: ', minDist)
+		# print('minItem: ', minItem)		
 		if minLabel in chain:
-			# visitados = chain[minLabel]
-			aux = chain[minLabel]
-			aux.append(minIdx)
-			del chain[minLabel]
-			chain[minLabel] = aux
+			aux = list(chain[minLabel].keys())
+			print('aux: ')
+			print(aux)
+			print('chain')
+			print(chain)
+			for i in range(len(aux)):
+				if aux[i] == minIdx:
+					stop = True
+					break
+			if stop == False:
+				aux.append(minIdx)
+				# del chain[minLabel][minIdx]
+				# chain[minLabel] = aux
+				# chain[minLabel] = {}
+				chain[minLabel][minIdx] = minDist
 		else:
-			aux = [minIdx]
-			chain[minLabel] = aux
+			aux = minIdx
+			# chain[minLabel] = aux			
+			chain[minLabel] = {}
+			chain[minLabel][minIdx] = minDist
 
 
-		# visitados = chain[minLabel]
-		# for i in range(len(visitados)):
-		# 	if visitados[i] == minIdx:
-		# 		stop = True
-		# 		break
-		# if stop == False:
-		# 	aux = chain[minLabel]
-		# 	aux.append(minIdx)
-		# 	del chain[minLabel]
-		# 	chain[minLabel] = aux	
+		if stop == False:
+			minDist  = math.inf
+			matrixDistanceItemLabel = np.zeros((1, len(dataItemLabel[itemLabel])))
+			data = dataItemLabel[itemLabel]
+			for idx in range(len(data)):
+				dist = matrixDistanceItemLabel[0, idx]
+				if dist == 0:
+					# print('dataItemLabel[idx]')
+					# print(data[idx])
+					# print('itemSearch')
+					# print(itemSearch)
+					dist = distanceDTW(data[idx], itemSearch)
+					matrixDistance[0, idx] = dist
+
+				if dist < minDist:
+					minDist  = dist
+					minLabel = itemLabel
+					minIdx   = idx
+					minItem  = data[idx]
+
+			itemSearch = minItem	
+			print('minLabel: ', minLabel)
+			print('minIdx: ', minIdx)
+			print('minDist: ', minDist)
+			print('minItem: ', minItem)	
+
+			if minLabel in chain:
+				aux = list(chain[minLabel].keys())
+				for i in range(len(aux)):
+					if aux[i] == minIdx:
+						stop = True
+						break
+				if stop == False:
+					aux.append(minIdx)
+					# del chain[minLabel][minIdx]
+					# chain[minLabel] = aux
+					# Dict['Dict1']['name'] = 'Bob'
+					# chain[minLabel] = {}
+					chain[itemLabel][minIdx] = minDist
+			else:
+				aux = minIdx
+				# chain[minLabel] = aux
+				chain[itemLabel] = {}
+				chain[itemLabel][aux] = minDist
+	
+	print('chain')
+	print(chain)
+
+
+	# print('-------------------------------')
+	# print('label: ', label)
+	# for idx in range(len(data)):
+	# 	dist = distanceDTW(data[idx], itemSearch)
+	# 	print('dist: ', dist)
+	# 	if dist < minDist:
+	# 		minDist  = dist
+	# 		minLabel = label
+	# 		minIdx   = idx
+	# 		minItem  = data[idx]
+	# print('-------------------------------')
 
 
 def makeChain2(item, itemLabel, subTrain, labelTrain):
@@ -330,7 +395,7 @@ def TKNN(train, test, labelTrain, labelTest):
 
 
 
-nameFile = 'treino.txt'
+nameFile = 'treino2.txt'
 labelTrain, timeSeriesTrain = loadFile(nameFile)
 
 # classElementsAll
@@ -344,7 +409,7 @@ labelTrain, timeSeriesTrain = loadFile(nameFile)
 a = [0.33333 , 0.29167 , 0.29167 , 0.27778 , 0.23611 , 0.22222 , 0.16667 , 0.13889 , 0.097222 , 0.083333 , 0.055556 , 0.069444 , 0.069444 , 0.055556 , 0.069444 , 0.083333 , 0.097222 , 0.097222 , 0.125 , 0.16667 , 0.15278 , 0.15278 , 0.20833 , 0.27778 , 0.33333 , 0.375 , 0.40278 , 0.44444 , 0.47222 , 0.55556 , 0.55556 , 0.56944 , 0.55556 , 0.54167 , 0.52778 , 0.55556 , 0.56944 , 0.59722 , 0.61111 , 0.625 , 0.61111 , 0.56944]
 st, labelTrain = getSubTrain(1)
 start = time.time()
-makeChain(a, 1, st, labelTrain)
+makeChain(a, 1)
 end = time.time()
 duration = end - start
 print('duration: ', duration)
